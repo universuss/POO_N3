@@ -1,0 +1,1800 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+
+namespace Imobiliaria
+{
+    // Classe que representa um locador
+    class Locador
+    {
+        public int Id { get; set; } // Propriedade que armazena o ID do locador
+        public string Nome { get; set; } // Propriedade que armazena o nome do locador
+        public string Telefone { get; set; } // Propriedade que armazena o telefone do locador
+
+        // Construtor que recebe o ID, o nome e o telefone do locador
+        public Locador(int id, string nome, string telefone)
+        {
+            Id = id;
+            Nome = nome;
+            Telefone = telefone;
+        }
+
+        // Método que retorna uma string com os dados do locador formatados
+        public override string ToString()
+        {
+            return $"{Id};{Nome};{Telefone}";
+        }
+    }
+
+    // Classe que representa um locatário
+    class Locatario
+    {
+        public int Id { get; set; } // Propriedade que armazena o ID do locatário
+        public string Nome { get; set; } // Propriedade que armazena o nome do locatário
+        public string Telefone { get; set; } // Propriedade que armazena o telefone do locatário
+
+        // Construtor que recebe o ID, o nome e o telefone do locatário
+        public Locatario(int id, string nome, string telefone)
+        {
+            Id = id;
+            Nome = nome;
+            Telefone = telefone;
+        }
+
+        // Método que retorna uma string com os dados do locatário formatados
+        public override string ToString()
+        {
+            return $"{Id};{Nome};{Telefone}";
+        }
+    }
+
+    // Classe que representa um imóvel
+    class Imovel
+    {
+        public int Id { get; set; } // Propriedade que armazena o ID do imóvel
+        public string Tipo { get; set; } // Propriedade que armazena o tipo do imóvel
+        public int IdLocador { get; set; } // Propriedade que armazena o ID do locador do imóvel
+        public decimal Valor { get; set; } // Propriedade que armazena o valor mensal do aluguel do imóvel
+
+        // Construtor que recebe o ID, o tipo, o ID do locador e o valor do imóvel
+        public Imovel(int id, string tipo, int idLocador, decimal valor)
+        {
+            Id = id;
+            Tipo = tipo;
+            IdLocador = idLocador;
+            Valor = valor;
+        }
+
+        // Método que retorna uma string com os dados do imóvel formatados
+        public override string ToString()
+        {
+            return $"{Id};{Tipo};{IdLocador};{Valor}";
+        }
+    }
+
+    // Classe que representa um contrato
+    class Contrato
+    {
+        public int Id { get; set; } // Propriedade que armazena o ID do contrato
+        public int IdImovel { get; set; } // Propriedade que armazena o ID do imóvel do contrato
+        public int IdLocatario { get; set; } // Propriedade que armazena o ID do locatário do contrato
+        public List<Parcela> Parcelas { get; set; } // Propriedade que armazena a lista de parcelas do contrato
+
+        // Construtor que recebe o ID, o ID do imóvel, o ID do locatário e o valor do aluguel do contrato
+        public Contrato(int id, int idImovel, int idLocatario, decimal valor)
+        {
+            Id = id;
+            IdImovel = idImovel;
+            IdLocatario = idLocatario;
+            Parcelas = new List<Parcela>(); // Inicializa a lista de parcelas
+            // Gera as 12 parcelas do contrato com o valor e o status padrão
+            for (int i = 1; i <= 12; i++)
+            {
+                Parcelas.Add(new Parcela($"{i}/12", valor, "Em aberto", "A Receber", "A Receber"));
+            }
+        }
+
+        // Método que retorna uma string com os dados do contrato formatados
+        public override string ToString()
+        {
+            return $"{Id};{IdImovel};{IdLocatario}";
+        }
+    }
+
+    // Classe que representa uma parcela
+    class Parcela
+    {
+        public string Codigo { get; set; } // Propriedade que armazena o código da parcela
+        public decimal Valor { get; set; } // Propriedade que armazena o valor da parcela
+        public string Status { get; set; } // Propriedade que armazena o status da parcela
+        public string Imobiliaria { get; set; } // Propriedade que armazena o status da imobiliária
+        public string Locador { get; set; } // Propriedade que armazena o status do locador
+
+        // Construtor que recebe o código, o valor, o status, o status da imobiliária e o status do locador da parcela
+        public Parcela(string codigo, decimal valor, string status, string imobiliaria, string locador)
+        {
+            Codigo = codigo;
+            Valor = valor;
+            Status = status;
+            Imobiliaria = imobiliaria;
+            Locador = locador;
+        }
+
+        // Método que retorna uma string com os dados da parcela formatados
+        public override string ToString()
+        {
+            return $"{Codigo};{Valor};{Status};{Imobiliaria};{Locador}";
+        }
+    }
+
+    // Classe que representa o sistema da imobiliária
+    class Sistema
+    {
+        // Atributos que armazenam os nomes dos arquivos de texto que serão usados para salvar e ler os dados
+        private string arquivoLocadores = "locadores.txt";
+        private string arquivoLocatarios = "locatarios.txt";
+        private string arquivoImoveis = "imoveis.txt";
+        private string arquivoContratos = "contratos.txt";
+        private string arquivoParcelas = "parcelas.txt";
+
+        // Atributos que armazenam as listas de locadores, locatários, imóveis e contratos do sistema
+        private List<Locador> locadores;
+        private List<Locatario> locatarios;
+        private List<Imovel> imoveis;
+        private List<Contrato> contratos;
+
+        // Construtor que inicializa as listas e lê os dados dos arquivos de texto
+        public Sistema()
+        {
+            locadores = new List<Locador>();
+            locatarios = new List<Locatario>();
+            imoveis = new List<Imovel>();
+            contratos = new List<Contrato>();
+            LerDados();
+        }
+
+        // Método que lê os dados dos arquivos de texto e preenche as listas do sistema
+        private void LerDados()
+        {
+            // Lê os dados dos locadores
+            if (File.Exists(arquivoLocadores)) // Verifica se o arquivo existe
+            {
+                using (StreamReader sr = new StreamReader(arquivoLocadores)) // Cria um objeto para ler o arquivo
+                {
+                    string linha; // Variável que armazena cada linha do arquivo
+                    while ((linha = sr.ReadLine()) != null) // Lê cada linha até o final do arquivo
+                    {
+                        string[] dados = linha.Split(';'); // Separa os dados da linha pelo caractere ';'
+                        int id = int.Parse(dados[0]); // Converte o primeiro dado para inteiro (ID do locador)
+                        string nome = dados[1]; // Atribui o segundo dado para string (nome do locador)
+                        string telefone = dados[2]; // Atribui o terceiro dado para string (telefone do locador)
+                        Locador locador = new Locador(id, nome, telefone); // Cria um objeto locador com os dados lidos
+                        locadores.Add(locador); // Adiciona o locador na lista de locadores
+                    }
+                }
+            }
+
+            // Lê os dados dos locatários
+            if (File.Exists(arquivoLocatarios)) // Verifica se o arquivo existe
+            {
+                using (StreamReader sr = new StreamReader(arquivoLocatarios)) // Cria um objeto para ler o arquivo
+                {
+                    string linha; // Variável que armazena cada linha do arquivo
+                    while ((linha = sr.ReadLine()) != null) // Lê cada linha até o final do arquivo
+                    {
+                        string[] dados = linha.Split(';
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+
+namespace Imobiliaria
+{
+    // Classe que representa um locador
+    class Locador
+    {
+        public int Id { get; set; } // Propriedade que armazena o ID do locador
+        public string Nome { get; set; } // Propriedade que armazena o nome do locador
+        public string Telefone { get; set; } // Propriedade que armazena o telefone do locador
+
+        // Construtor que recebe o ID, o nome e o telefone do locador
+        public Locador(int id, string nome, string telefone)
+        {
+            Id = id;
+            Nome = nome;
+            Telefone = telefone;
+        }
+
+        // Método que retorna uma string com os dados do locador formatados
+        public override string ToString()
+        {
+            return $"{Id};{Nome};{Telefone}";
+        }
+    }
+
+    // Classe que representa um locatário
+    class Locatario
+    {
+        public int Id { get; set; } // Propriedade que armazena o ID do locatário
+        public string Nome { get; set; } // Propriedade que armazena o nome do locatário
+        public string Telefone { get; set; } // Propriedade que armazena o telefone do locatário
+
+        // Construtor que recebe o ID, o nome e o telefone do locatário
+        public Locatario(int id, string nome, string telefone)
+        {
+            Id = id;
+            Nome = nome;
+            Telefone = telefone;
+        }
+
+        // Método que retorna uma string com os dados do locatário formatados
+        public override string ToString()
+        {
+            return $"{Id};{Nome};{Telefone}";
+        }
+    }
+
+    // Classe que representa um imóvel
+    class Imovel
+    {
+        public int Id { get; set; } // Propriedade que armazena o ID do imóvel
+        public string Tipo { get; set; } // Propriedade que armazena o tipo do imóvel
+        public int IdLocador { get; set; } // Propriedade que armazena o ID do locador do imóvel
+        public decimal Valor { get; set; } // Propriedade que armazena o valor mensal do aluguel do imóvel
+
+        // Construtor que recebe o ID, o tipo, o ID do locador e o valor do imóvel
+        public Imovel(int id, string tipo, int idLocador, decimal valor)
+        {
+            Id = id;
+            Tipo = tipo;
+            IdLocador = idLocador;
+            Valor = valor;
+        }
+
+        // Método que retorna uma string com os dados do imóvel formatados
+        public override string ToString()
+        {
+            return $"{Id};{Tipo};{IdLocador};{Valor}";
+        }
+    }
+
+    // Classe que representa um contrato
+    class Contrato
+    {
+        public int Id { get; set; } // Propriedade que armazena o ID do contrato
+        public int IdImovel { get; set; } // Propriedade que armazena o ID do imóvel do contrato
+        public int IdLocatario { get; set; } // Propriedade que armazena o ID do locatário do contrato
+        public List<Parcela> Parcelas { get; set; } // Propriedade que armazena a lista de parcelas do contrato
+
+        // Construtor que recebe o ID, o ID do imóvel, o ID do locatário e o valor do aluguel do contrato
+        public Contrato(int id, int idImovel, int idLocatario, decimal valor)
+        {
+            Id = id;
+            IdImovel = idImovel;
+            IdLocatario = idLocatario;
+            Parcelas = new List<Parcela>(); // Inicializa a lista de parcelas
+            // Gera as 12 parcelas do contrato com o valor e o status padrão
+            for (int i = 1; i <= 12; i++)
+            {
+                Parcelas.Add(new Parcela($"{i}/12", valor, "Em aberto", "A Receber", "A Receber"));
+            }
+        }
+
+        // Método que retorna uma string com os dados do contrato formatados
+        public override string ToString()
+        {
+            return $"{Id};{IdImovel};{IdLocatario}";
+        }
+    }
+
+    // Classe que representa uma parcela
+    class Parcela
+    {
+        public string Codigo { get; set; } // Propriedade que armazena o código da parcela
+        public decimal Valor { get; set; } // Propriedade que armazena o valor da parcela
+        public string Status { get; set; } // Propriedade que armazena o status da parcela
+        public string Imobiliaria { get; set; } // Propriedade que armazena o status da imobiliária
+        public string Locador { get; set; } // Propriedade que armazena o status do locador
+
+        // Construtor que recebe o código, o valor, o status, o status da imobiliária e o status do locador da parcela
+        public Parcela(string codigo, decimal valor, string status, string imobiliaria, string locador)
+        {
+            Codigo = codigo;
+            Valor = valor;
+            Status = status;
+            Imobiliaria = imobiliaria;
+            Locador = locador;
+        }
+
+        // Método que retorna uma string com os dados da parcela formatados
+        public override string ToString()
+        {
+            return $"{Codigo};{Valor};{Status};{Imobiliaria};{Locador}";
+        }
+    }
+
+    // Classe que representa o sistema da imobiliária
+    class Sistema
+    {
+        // Atributos que armazenam os nomes dos arquivos de texto que serão usados para salvar e ler os dados
+        private string arquivoLocadores = "locadores.txt";
+        private string arquivoLocatarios = "locatarios.txt";
+        private string arquivoImoveis = "imoveis.txt";
+        private string arquivoContratos = "contratos.txt";
+        private string arquivoParcelas = "parcelas.txt";
+
+        // Atributos que armazenam as listas de locadores, locatários, imóveis e contratos do sistema
+        private List<Locador> locadores;
+        private List<Locatario> locatarios;
+        private List<Imovel> imoveis;
+        private List<Contrato> contratos;
+
+        // Construtor que inicializa as listas e lê os dados dos arquivos de texto
+        public Sistema()
+        {
+            locadores = new List<Locador>();
+            locatarios = new List<Locatario>();
+            imoveis = new List<Imovel>();
+            contratos = new List<Contrato>();
+            LerDados();
+        }
+
+        // Método que lê os dados dos arquivos de texto e preenche as listas do sistema
+        private void LerDados()
+        {
+            // Lê os dados dos locadores
+            if (File.Exists(arquivoLocadores)) // Verifica se
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+
+namespace Imobiliaria
+{
+    // Classe que representa um locador
+    class Locador
+    {
+        public int Id { get; set; } // Propriedade que armazena o ID do locador
+        public string Nome { get; set; } // Propriedade que armazena o nome do locador
+        public string Telefone { get; set; } // Propriedade que armazena o telefone do locador
+
+        // Construtor que recebe o ID, o nome e o telefone do locador
+        public Locador(int id, string nome, string telefone)
+        {
+            Id = id;
+            Nome = nome;
+            Telefone = telefone;
+        }
+
+        // Método que retorna uma string com os dados do locador formatados
+        public override string ToString()
+        {
+            return $"{Id};{Nome};{Telefone}";
+        }
+    }
+
+    // Classe que representa um locatário
+    class Locatario
+    {
+        public int Id { get; set; } // Propriedade que armazena o ID do locatário
+        public string Nome { get; set; } // Propriedade que armazena o nome do locatário
+        public string Telefone { get; set; } // Propriedade que armazena o telefone do locatário
+
+        // Construtor que recebe o ID, o nome e o telefone do locatário
+        public Locatario(int id, string nome, string telefone)
+        {
+            Id = id;
+            Nome = nome;
+            Telefone = telefone;
+        }
+
+        // Método que retorna uma string com os dados do locatário formatados
+        public override string ToString()
+        {
+            return $"{Id};{Nome};{Telefone}";
+        }
+    }
+
+    // Classe que representa um imóvel
+    class Imovel
+    {
+        public int Id { get; set; } // Propriedade que armazena o ID do imóvel
+        public string Tipo { get; set; } // Propriedade que armazena o tipo do imóvel
+        public int IdLocador { get; set; } // Propriedade que armazena o ID do locador do imóvel
+        public decimal Valor { get; set; } // Propriedade que armazena o valor mensal do aluguel do imóvel
+
+        // Construtor que recebe o ID, o tipo, o ID do locador e o valor do imóvel
+        public Imovel(int id, string tipo, int idLocador, decimal valor)
+        {
+            Id = id;
+            Tipo = tipo;
+            IdLocador = idLocador;
+            Valor = valor;
+        }
+
+        // Método que retorna uma string com os dados do imóvel formatados
+        public override string ToString()
+        {
+            return $"{Id};{Tipo};{IdLocador};{Valor}";
+        }
+    }
+
+    // Classe que representa um contrato
+    class Contrato
+    {
+        public int Id { get; set; } // Propriedade que armazena o ID do contrato
+        public int IdImovel { get; set; } // Propriedade que armazena o ID do imóvel do contrato
+        public int IdLocatario { get; set; } // Propriedade que armazena o ID do locatário do contrato
+        public List<Parcela> Parcelas { get; set; } // Propriedade que armazena a lista de parcelas do contrato
+
+        // Construtor que recebe o ID, o ID do imóvel, o ID do locatário e o valor do aluguel do contrato
+        public Contrato(int id, int idImovel, int idLocatario, decimal valor)
+        {
+            Id = id;
+            IdImovel = idImovel;
+            IdLocatario = idLocatario;
+            Parcelas = new List<Parcela>(); // Inicializa a lista de parcelas
+            // Gera as 12 parcelas do contrato com o valor e o status padrão
+            for (int i = 1; i <= 12; i++)
+            {
+                Parcelas.Add(new Parcela($"{i}/12", valor, "Em aberto", "A Receber", "A Receber"));
+            }
+        }
+
+        // Método que retorna uma string com os dados do contrato formatados
+        public override string ToString()
+        {
+            return $"{Id};{IdImovel};{IdLocatario}";
+        }
+    }
+
+    // Classe que representa uma parcela
+    class Parcela
+    {
+        public string Codigo { get; set; } // Propriedade que armazena o código da parcela
+        public decimal Valor { get; set; } // Propriedade que armazena o valor da parcela
+        public string Status { get; set; } // Propriedade que armazena o status da parcela
+        public string Imobiliaria { get; set; } // Propriedade que armazena o status da imobiliária
+        public string Locador { get; set; } // Propriedade que armazena o status do locador
+
+        // Construtor que recebe o código, o valor, o status, o status da imobiliária e o status do locador da parcela
+        public Parcela(string codigo, decimal valor, string status, string imobiliaria, string locador)
+        {
+            Codigo = codigo;
+            Valor = valor;
+            Status = status;
+            Imobiliaria = imobiliaria;
+            Locador = locador;
+        }
+
+        // Método que retorna uma string com os dados da parcela formatados
+        public override string ToString()
+        {
+            return $"{Codigo};{Valor};{Status};{Imobiliaria};{Locador}";
+        }
+    }
+
+    // Classe que representa o sistema da imobiliária
+    class Sistema
+    {
+        // Atributos que armazenam os nomes dos arquivos de texto que serão usados para salvar e ler os dados
+        private string arquivoLocadores = "locadores.txt";
+        private string arquivoLocatarios = "locatarios.txt";
+        private string arquivoImoveis = "imoveis.txt";
+        private string arquivoContratos = "contratos.txt";
+        private string arquivoParcelas = "parcelas.txt";
+
+        // Atributos que armazenam as listas de locadores, locatários, imóveis e contratos do sistema
+        private List<Locador> locadores;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+
+namespace Imobiliaria
+{
+    // Classe que representa um locador
+    class Locador
+    {
+        public int Id { get; set; } // Propriedade que armazena o ID do locador
+        public string Nome { get; set; } // Propriedade que armazena o nome do locador
+        public string Telefone { get; set; } // Propriedade que armazena o telefone do locador
+
+        // Construtor que recebe o ID, o nome e o telefone do locador
+        public Locador(int id, string nome, string telefone)
+        {
+            Id = id;
+            Nome = nome;
+            Telefone = telefone;
+        }
+
+        // Método que retorna uma string com os dados do locador formatados
+        public override string ToString()
+        {
+            return $"{Id};{Nome};{Telefone}";
+        }
+    }
+
+    // Classe que representa um locatário
+    class Locatario
+    {
+        public int Id { get; set; } // Propriedade que armazena o ID do locatário
+        public string Nome { get; set; } // Propriedade que armazena o nome do locatário
+        public string Telefone { get; set; } // Propriedade que armazena o telefone do locatário
+
+        // Construtor que recebe o ID, o nome e o telefone do locatário
+        public Locatario(int id, string nome, string telefone)
+        {
+            Id = id;
+            Nome = nome;
+            Telefone = telefone;
+        }
+
+        // Método que retorna uma string com os dados do locatário formatados
+        public override string ToString()
+        {
+            return $"{Id};{Nome};{Telefone}";
+        }
+    }
+
+    // Classe que representa um imóvel
+    class Imovel
+    {
+        public int Id { get; set; } // Propriedade que armazena o ID do imóvel
+        public string Tipo { get; set; } // Propriedade que armazena o tipo do imóvel
+        public int IdLocador { get; set; } // Propriedade que armazena o ID do locador do imóvel
+        public decimal Valor { get; set; } // Propriedade que armazena o valor mensal do aluguel do imóvel
+
+        // Construtor que recebe o ID, o tipo, o ID do locador e o valor do imóvel
+        public Imovel(int id, string tipo, int idLocador, decimal valor)
+        {
+            Id = id;
+            Tipo = tipo;
+            IdLocador = idLocador;
+            Valor = valor;
+        }
+
+        // Método que retorna uma string com os dados do imóvel formatados
+        public override string ToString()
+        {
+            return $"{Id};{Tipo};{IdLocador};{Valor}";
+        }
+    }
+
+    // Classe que representa um contrato
+    class Contrato
+    {
+        public int Id { get; set; } // Propriedade que armazena o ID do contrato
+        public int IdImovel { get; set; } // Propriedade que armazena o ID do imóvel do contrato
+        public int IdLocatario { get; set; } // Propriedade que armazena o ID do locatário do contrato
+        public List<Parcela> Parcelas { get; set; } // Propriedade que armazena a lista de parcelas do contrato
+
+        // Construtor que recebe o ID, o ID do imóvel, o ID do locatário e o valor do aluguel do contrato
+        public Contrato(int id, int idImovel, int idLocatario, decimal valor)
+        {
+            Id = id;
+            IdImovel = idImovel;
+            IdLocatario = idLocatario;
+            Parcelas = new List<Parcela>(); // Inicializa a lista de parcelas
+            // Gera as 12 parcelas do contrato com o valor e o status padrão
+            for (int i = 1; i <= 12; i++)
+            {
+                Parcelas.Add(new Parcela($"{i}/12", valor, "Em aberto", "A Receber", "A Receber"));
+            }
+        }
+
+        // Método que retorna uma string com os dados do contrato formatados
+        public override string ToString()
+        {
+            return $"{Id};{IdImovel};{IdLocatario}";
+        }
+    }
+
+    // Classe que representa uma parcela
+    class Parcela
+    {
+        public string Codigo { get; set; } // Propriedade que armazena o código da parcela
+        public decimal Valor { get; set; } // Propriedade que armazena o valor da parcela
+        public string Status { get; set; } // Propriedade que armazena o status da parcela
+        public string Imobiliaria { get; set; } // Propriedade que armazena o status da imobiliária
+        public string Locador { get; set; } // Propriedade que armazena o status do locador
+
+        // Construtor que recebe o código, o valor, o status, o status da imobiliária e o status do locador da parcela
+        public Parcela(string codigo, decimal valor, string status, string imobiliaria, string locador)
+        {
+            Codigo = codigo;
+            Valor = valor;
+            Status = status;
+            Imobiliaria = imobiliaria;
+            Locador = locador;
+        }
+
+        // Método que retorna uma string com os dados da parcela formatados
+        public override string ToString()
+        {
+            return $"{Codigo};{Valor};{Status};{Imobiliaria};{Locador}";
+        }
+    }
+
+    // Classe que representa o sistema da imobiliária
+    class Sistema
+    {
+        // Atributos que armazenam os nomes dos arquivos de texto que serão usados para salvar e ler os dados
+        private string arquivoLocadores = "locadores.txt";
+        private string arquivoLocatarios = "locatarios.txt";
+        private string arquivoImoveis = "imoveis.txt";
+        private string arquivoContratos = "contratos.txt";
+        private string arquivoParcelas = "parcelas.txt";
+
+        // Atributos que armazenam as listas de locadores, locatários, imóveis e contratos do sistema
+        private List<Locador> locadores;
+        private List<Locatario> locatarios;
+        private List<Imovel> imoveis;
+        private List<Contrato> contratos;
+
+        // Construtor que inicializa as listas e lê os dados dos arquivos de texto
+        public Sistema()
+        {
+            locadores = new List<Locador>();
+            locatarios = new List<Locatario>();
+            imoveis = new List<Imovel>();
+            contratos = new List<Contrato>();
+            LerDados();
+        }
+
+        // Método que lê os dados dos arquivos de texto e preenche as listas do sistema
+        private void LerDados()
+        {
+            // Lê os dados dos locadores
+            if (File.Exists(arquivoLocadores)) // Verifica se o arquivo existe
+            {
+                using (StreamReader sr = new StreamReader(arquivoLocadores)) // Cria um objeto para ler o arquivo
+                {
+                    string linha; // Variável que armazena cada linha do arquivo
+                    while ((linha = sr.ReadLine()) != null) // Lê cada linha até o final do arquivo
+                    {
+                        string[] dados = linha.Split(';'); // Separa os dados da linha pelo caractere ';'
+                        int id = int.Parse(dados[0]); // Converte o primeiro dado para inteiro (ID do locador)
+                        string nome = dados[1]; // Atribui o segundo dado para string (nome do locador)
+                        string telefone = dados[2]; // Atribui o terceiro dado para string (telefone do locador)
+                        Locador locador = new Locador(id, nome, telefone); // Cria um objeto locador com os dados lidos
+                        locadores.Add(locador); // Adiciona o locador na lista de locadores
+                    }
+                }
+            }
+
+            // Lê os dados dos locatários
+            if (File.Exists(arquivoLocatarios)) // Verifica se o arquivo existe
+            {
+                using (StreamReader sr = new StreamReader(arquivoLocatarios)) // Cria um objeto para ler o arquivo
+                {
+                    string linha; // Variável que armazena cada linha do arquivo
+                    while ((linha = sr.ReadLine()) != null) // Lê cada linha até o final do arquivo
+                    {
+                        string[] dados = linha.Split(';'); // Separa os dados da linha pelo caractere ';'
+                        int id
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+
+namespace Imobiliaria
+{
+    // Classe que representa um locador
+    class Locador
+    {
+        public int Id { get; set; } // Propriedade que armazena o ID do locador
+        public string Nome { get; set; } // Propriedade que armazena o nome do locador
+        public string Telefone { get; set; } // Propriedade que armazena o telefone do locador
+
+        // Construtor que recebe o ID, o nome e o telefone do locador
+        public Locador(int id, string nome, string telefone)
+        {
+            Id = id;
+            Nome = nome;
+            Telefone = telefone;
+        }
+
+        // Método que retorna uma string com os dados do locador formatados
+        public override string ToString()
+        {
+            return $"{Id};{Nome};{Telefone}";
+        }
+    }
+
+    // Classe que representa um locatário
+    class Locatario
+    {
+        public int Id { get; set; } // Propriedade que armazena o ID do locatário
+        public string Nome { get; set; } // Propriedade que armazena o nome do locatário
+        public string Telefone { get; set; } // Propriedade que armazena o telefone do locatário
+
+        // Construtor que recebe o ID, o nome e o telefone do locatário
+        public Locatario(int id, string nome, string telefone)
+        {
+            Id = id;
+            Nome = nome;
+            Telefone = telefone;
+        }
+
+        // Método que retorna uma string com os dados do locatário formatados
+        public override string ToString()
+        {
+            return $"{Id};{Nome};{Telefone}";
+        }
+    }
+
+    // Classe que representa um imóvel
+    class Imovel
+    {
+        public int Id { get; set; } // Propriedade que armazena o ID do imóvel
+        public string Tipo { get; set; } // Propriedade que armazena o tipo do imóvel
+        public int IdLocador { get; set; } // Propriedade que armazena o ID do locador do imóvel
+        public decimal Valor { get; set; } // Propriedade que armazena o valor mensal do aluguel do imóvel
+
+        // Construtor que recebe o ID, o tipo, o ID do locador e o valor do imóvel
+        public Imovel(int id, string tipo, int idLocador, decimal valor)
+        {
+            Id = id;
+            Tipo = tipo;
+            IdLocador = idLocador;
+            Valor = valor;
+        }
+
+        // Método que retorna uma string com os dados do imóvel formatados
+        public override string ToString()
+        {
+            return $"{Id};{Tipo};{IdLocador};{Valor}";
+        }
+    }
+
+    // Classe que representa um contrato
+    class Contrato
+    {
+        public int Id { get; set; } // Propriedade que armazena o ID do contrato
+        public int IdImovel { get; set; } // Propriedade que armazena o ID do imóvel do contrato
+        public int IdLocatario { get; set; } // Propriedade que armazena o ID do locatário do contrato
+        public List<Parcela> Parcelas { get; set; } // Propriedade que armazena a lista de parcelas do contrato
+
+        // Construtor que recebe o ID, o ID do imóvel, o ID do locatário e o valor do aluguel do contrato
+        public Contrato(int id, int idImovel, int idLocatario, decimal valor)
+        {
+            Id = id;
+            IdImovel = idImovel;
+            IdLocatario = idLocatario;
+            Parcelas = new List<Parcela>(); // Inicializa a lista de parcelas
+            // Gera as 12 parcelas do contrato com o valor e o status padrão
+            for (int i = 1; i <= 12; i++)
+            {
+                Parcelas.Add(new Parcela($"{i}/12", valor, "Em aberto", "A Receber", "A Receber"));
+            }
+        }
+
+        // Método que retorna uma string com os dados do contrato formatados
+        public override string ToString()
+        {
+            return $"{Id};{IdImovel};{IdLocatario}";
+        }
+    }
+
+    // Classe que representa uma parcela
+    class Parcela
+    {
+        public string Codigo { get; set; } // Propriedade que armazena o código da parcela
+        public decimal Valor { get; set; } // Propriedade que armazena o valor da parcela
+        public string Status { get; set; } // Propriedade que armazena o status da parcela
+        public string Imobiliaria { get; set; } // Propriedade que armazena o status da imobiliária
+        public string Locador { get; set; } // Propriedade que armazena o status do locador
+
+        // Construtor que recebe o código, o valor, o status, o status da imobiliária e o status do locador da parcela
+        public Parcela(string codigo, decimal valor, string status, string imobiliaria, string locador)
+        {
+            Codigo = codigo;
+            Valor = valor;
+            Status = status;
+            Imobiliaria = imobiliaria;
+            Locador = locador;
+        }
+
+        // Método que retorna uma string com os dados da parcela formatados
+        public override string ToString()
+        {
+            return $"{Codigo};{Valor};{Status};{Imobiliaria};{Locador}";
+        }
+    }
+
+    // Classe que representa o sistema da imobiliária
+    class Sistema
+    {
+        // Atributos que armazenam os nomes dos arquivos de texto que serão usados para salvar e ler os dados
+        private string arquivoLocadores = "locadores.txt";
+        private string arquivoLocatarios = "locatarios.txt";
+        private string arquivoImoveis = "imoveis.txt";
+        private string arquivoContratos = "contratos.txt";
+        private string arquivoParcelas = "parcelas.txt";
+
+        // Atributos que armazenam as listas de locadores, locatários, imóveis e contratos do sistema
+        private List<Locador> locadores;
+        private List<Locatario> locatarios;
+        private List<Imovel> imoveis;
+        private List<Contrato> contratos;
+
+        // Construtor que inicializa as listas e lê os dados dos arquivos de texto
+        public Sistema()
+        {
+            locadores = new List<Locador>();
+            locatarios = new List<Locatario>();
+            imoveis = new List<Imovel>();
+            contratos = new List<Contrato>();
+            LerDados();
+        }
+
+        // Método que lê os dados dos arquivos de texto e preenche as listas do sistema
+        private void LerDados()
+        {
+            // Lê os dados dos locadores
+            if (File.Exists(arquivoLocadores)) // Verifica se o arquivo existe
+            {
+                using (StreamReader sr = new StreamReader(arquivoLocadores)) // Cria um objeto para ler o arquivo
+                {
+                    string linha; // Variável que armazena cada linha do arquivo
+                    while ((linha = sr.ReadLine()) != null) // Lê cada linha até o final do arquivo
+                    {
+                        string[] dados = linha.Split(';'); // Separa os dados da linha pelo caractere ';'
+                        int id = int.Parse(dados[0]); // Converte o primeiro dado para inteiro (ID do locador)
+                        string nome = dados[1]; // Atribui o segundo dado para string (nome do locador)
+                        string telefone = dados[2]; // Atribui o terceiro dado para string (telefone do locador)
+                        Locador locador = new Locador(id, nome, telefone); // Cria um objeto locador com os dados lidos
+                        locadores.Add(locador); // Adiciona o locador na lista de locadores
+                    }
+                }
+            }
+
+            // Lê os dados dos locatários
+            if (File.Exists(arquivoLocatarios)) // Verifica se o arquivo existe
+            {
+                using (StreamReader sr = new StreamReader(arquivoLocatarios)) // Cria um objeto para ler o arquivo
+                {
+                    string linha; // Variável que armazena cada linha do arquivo
+                    while ((linha = sr.ReadLine()) != null) // Lê cada linha até o final do arquivo
+                    {
+                        string[] dados = linha.Split(';'); // Sep
+                        string[] dados = linha.Split(';'); // Separa os dados da linha pelo caractere ';'
+                        int id = int.Parse(dados[0]); // Converte o primeiro dado para inteiro (ID do locatário)
+                        string nome = dados[1]; // Atribui o segundo dado para string (nome do locatário)
+                        string telefone = dados[2]; // Atribui o terceiro dado para string (telefone do locatário)
+                        Locatario locatario = new Locatario(id, nome, telefone); // Cria um objeto locatário com os dados lidos
+                        locatarios.Add(locatario); // Adiciona o locatário na lista de locatários
+                    }
+                }
+            }
+
+            // Lê os dados dos imóveis
+            if (File.Exists(arquivoImoveis)) // Verifica se o arquivo existe
+            {
+                using (StreamReader sr = new StreamReader(arquivoImoveis)) // Cria um objeto para ler o arquivo
+                {
+                    string linha; // Variável que armazena cada linha do arquivo
+                    while ((linha = sr.ReadLine()) != null) // Lê cada linha até o final do arquivo
+                    {
+                        string[] dados = linha.Split(';'); // Separa os dados da linha pelo caractere ';'
+                        int id = int.Parse(dados[0]); // Converte o primeiro dado para inteiro (ID do imóvel)
+                        string tipo = dados[1]; // Atribui o segundo dado para string (tipo do imóvel)
+                        int idLocador = int.Parse(dados[2]); // Converte o terceiro dado para inteiro (ID do locador do imóvel)
+                        decimal valor = decimal.Parse(dados[3]); // Converte o quarto dado para decimal (valor do aluguel do imóvel)
+                        Imovel imovel = new Imovel(id, tipo, idLocador, valor); // Cria um objeto imóvel com os dados lidos
+                        imoveis.Add(imovel); // Adiciona o imóvel na lista de imóveis
+                    }
+                }
+            }
+
+            // Lê os dados dos contratos
+            if (File.Exists(arquivoContratos)) // Verifica se o arquivo existe
+            {
+                using (StreamReader sr = new StreamReader(arquivoContratos)) // Cria um objeto para ler o arquivo
+                {
+                    string linha; // Variável que armazena cada linha do arquivo
+                    while ((linha = sr.ReadLine()) != null) // Lê cada linha até o final do arquivo
+                    {
+                        string[] dados = linha.Split(';'); // Separa os dados da linha pelo caractere ';'
+                        int id = int.Parse(dados[0]); // Converte o primeiro dado para inteiro (ID do contrato)
+                        int idImovel = int.Parse(dados[1]); // Converte o segundo dado para inteiro (ID do imóvel do contrato)
+                        int idLocatario = int.Parse(dados[2]); // Converte o terceiro dado para inteiro (ID do locatário do contrato)
+                        // Obtém o valor do aluguel do imóvel do contrato
+                        decimal valor = imoveis.Find(i => i.Id == idImovel).Valor;
+                        Contrato contrato = new Contrato(id, idImovel, idLocatario, valor); // Cria um objeto contrato com os dados lidos
+                        contratos.Add(contrato); // Adiciona o contrato na lista de contratos
+                    }
+                }
+            }
+
+            // Lê os dados das parcelas
+            if (File.Exists(arquivoParcelas)) // Verifica se o arquivo existe
+            {
+                using (StreamReader sr = new StreamReader(arquivoParcelas)) // Cria um objeto para ler o arquivo
+                {
+                    string linha; // Variável que armazena cada linha do arquivo
+                    while ((linha = sr.ReadLine()) != null) // Lê cada linha até o final do arquivo
+                    {
+                        string[] dados = linha.Split(';'); // Separa os dados da linha pelo caractere ';'
+                        int idContrato = int.Parse(dados[0]); // Converte o primeiro dado para inteiro (ID do contrato da parcela)
+                        string codigo = dados[1]; // Atribui o segundo dado para string (código da parcela)
+                        decimal valor = decimal.Parse(dados[2]); // Converte o terceiro dado para decimal (valor da parcela)
+                        string status = dados[3]; // Atribui o quarto dado para string (status da parcela)
+                        string imobiliaria = dados[4]; // Atribui o quinto dado para string (status da imobiliária)
+                        string locador = dados[5]; // Atribui o sexto dado para string (status do locador)
+                        Parcela parcela = new Parcela(codigo, valor, status, imobiliaria, locador); // Cria um objeto parcela com os dados lidos
+                        // Obtém o contrato da parcela
+                        Contrato contrato = contratos.Find(c => c.Id == idContrato);
+                        // Adiciona a parcela na lista de parcelas do contrato
+                        contrato.Parcelas.Add(parcela);
+                    }
+                }
+            }
+        }
+
+        // Método que salva os dados das listas nos arquivos de texto
+        private void SalvarDados()
+        {
+            // Salva os dados dos locadores
+            using (StreamWriter sw = new StreamWriter(arquivoLocadores)) // Cria um objeto para escrever no arquivo
+            {
+                foreach (Locador locador in locadores) // Percorre cada locador na lista de locadores
+                {
+                    sw.WriteLine(locador); // Escreve os dados do locador no arquivo
+                }
+            }
+
+            // Salva os dados dos locatários
+            using (StreamWriter sw = new StreamWriter(arquivoLocatarios)) // Cria um objeto para escrever no arquivo
+            {
+                foreach (Locatario locatario in locatarios) // Percorre cada locatário na lista de locatários
+                {
+                    sw.WriteLine(locatario); // Escreve os dados do locatário no arquivo
+                }
+            }
+
+            // Salva os dados dos imóveis
+            using (StreamWriter sw = new StreamWriter(arquivoImoveis)) // Cria um objeto para escrever no arquivo
+            {
+                foreach (Imovel imovel in imoveis) // Percorre cada imóvel na lista de imóveis
+                {
+                    sw.WriteLine(imovel); // Escreve os dados do imóvel no arquivo
+                }
+            }
+
+            // Salva os dados dos contratos
+            using (StreamWriter sw = new StreamWriter(arquivoContratos)) // Cria um objeto para escrever no arquivo
+            {
+                foreach (Contrato contrato in contratos) // Percorre cada contrato na lista de contratos
+                {
+                    sw.WriteLine(contrato); // Escreve os dados do contrato no arquivo
+                }
+            }
+
+            // Salva os dados das parcelas
+            using (StreamWriter sw = new StreamWriter(arquivoParcelas)) // Cria um objeto para escrever no arquivo
+            {
+                foreach (Contrato contrato in contratos) // Percorre cada contrato na lista de contratos
+                {
+                    foreach (Parcela parcela in contrato.Parcelas) // Percorre cada parcela na lista de parcelas do contrato
+                    {
+                        sw.WriteLine($"{contrato.Id};{parcela}"); // Escreve os dados da parcela e do contrato no arquivo
+                    }
+                }
+            }
+        }
+
+        // Método que exibe o menu principal do sistema
+        public void MenuPrincipal()
+        {
+            bool sair = false; // Variável que controla a saída do loop
+            while (!sair) // Enquanto não sair
+            {
+                Console.Clear(); // Limpa a tela
+                Console.WriteLine("Menu Principal"); // Escreve o título do menu
+                Console.WriteLine("1 – Cadastros"); // Escreve a opção 1
+                Console.WriteLine("2 – Alugar Imóvel"); // Escreve a opção 2
+                Console.WriteLine("3 – Consultar Contratos"); // Escreve a opção 3
+                Console.WriteLine("4 – Sair do Programa"); // Escreve a opção 4
+                Console.Write("Digite a opção desejada: "); // Escreve a instrução para digitar a opção
+                string opcao = Console.ReadLine(); // Lê a opção digitada
+                switch (opcao) // Escolhe a ação de acordo com a opção
+                {
+                    case "1": // Se a opção for 1
+                        MenuCadastros(); // Chama o método que exibe o menu de cadastros
+                        break; // Sai do switch
+                    case "2": // Se a opção for 2
+                        MenuAlugarImovel(); // Chama o método que exibe o menu de alugar imóvel
+                        break; // Sai do switch
+                    case "3": // Se a opção for 3
+                        MenuConsultarContratos(); // Chama o método que exibe o menu de consultar contratos
+                        break; // Sai do switch
+                    case "4": // Se a opção for 4
+                        sair =
+                        sair = true; // Atribui verdadeiro para a variável sair
+                        SalvarDados(); // Chama o método que salva os dados nos arquivos de texto
+                        Console.WriteLine("Obrigado por usar o sistema da imobiliária. Até mais!"); // Escreve uma mensagem de despedida
+                        break; // Sai do switch
+                    default: // Se a opção for qualquer outra coisa
+                        Console.WriteLine("Opção inválida. Pressione qualquer tecla para continuar."); // Escreve uma mensagem de erro
+                        Console.ReadKey(); // Espera o usuário pressionar uma tecla
+                        break; // Sai do switch
+                }
+            }
+        }
+
+        // Método que exibe o menu de cadastros do sistema
+        private void MenuCadastros()
+        {
+            bool voltar = false; // Variável que controla a saída do loop
+            while (!voltar) // Enquanto não voltar
+            {
+                Console.Clear(); // Limpa a tela
+                Console.WriteLine("Cadastros"); // Escreve o título do menu
+                Console.WriteLine("1 – Cadastro de Locador"); // Escreve a opção 1
+                Console.WriteLine("2 – Cadastro de Locatário"); // Escreve a opção 2
+                Console.WriteLine("3 – Cadastro de Imóvel"); // Escreve a opção 3
+                Console.WriteLine("4 – Voltar para o Menu Principal"); // Escreve a opção 4
+                Console.Write("Digite a opção desejada: "); // Escreve a instrução para digitar a opção
+                string opcao = Console.ReadLine(); // Lê a opção digitada
+                switch (opcao) // Escolhe a ação de acordo com a opção
+                {
+                    case "1": // Se a opção for 1
+                        CadastrarLocador(); // Chama o método que cadastra um locador
+                        break; // Sai do switch
+                    case "2": // Se a opção for 2
+                        CadastrarLocatario(); // Chama o método que cadastra um locatário
+                        break; // Sai do switch
+                    case "3": // Se a opção for 3
+                        CadastrarImovel(); // Chama o método que cadastra um imóvel
+                        break; // Sai do switch
+                    case "4": // Se a opção for 4
+                        voltar = true; // Atribui verdadeiro para a variável voltar
+                        break; // Sai do switch
+                    default: // Se a opção for qualquer outra coisa
+                        Console.WriteLine("Opção inválida. Pressione qualquer tecla para continuar."); // Escreve uma mensagem de erro
+                        Console.ReadKey(); // Espera o usuário pressionar uma tecla
+                        break; // Sai do switch
+                }
+            }
+        }
+
+        // Método que cadastra um locador no sistema
+        private void CadastrarLocador()
+        {
+            Console.Clear(); // Limpa a tela
+            Console.WriteLine("Cadastro de Locador"); // Escreve o título do cadastro
+            int id = locadores.Count + 1; // Gera um ID único para o locador
+            Console.WriteLine($"ID do Locador: {id}"); // Escreve o ID do locador
+            Console.Write("Nome do Locador: "); // Escreve a instrução para digitar o nome do locador
+            string nome = Console.ReadLine(); // Lê o nome do locador
+            Console.Write("Telefone do Locador: "); // Escreve a instrução para digitar o telefone do locador
+            string telefone = Console.ReadLine(); // Lê o telefone do locador
+            bool confirmar = false; // Variável que controla a confirmação do cadastro
+            while (!confirmar) // Enquanto não confirmar
+            {
+                Console.WriteLine("Você deseja salvar as informações do Cadastro do Locador?"); // Escreve a pergunta para confirmar o cadastro
+                Console.WriteLine("1 – Para Sim"); // Escreve a opção 1
+                Console.WriteLine("2 – Para Não"); // Escreve a opção 2
+                Console.WriteLine("3 – Voltar para o Menu Principal"); // Escreve a opção 3
+                Console.Write("Digite a opção desejada: "); // Escreve a instrução para digitar a opção
+                string opcao = Console.ReadLine(); // Lê a opção digitada
+                switch (opcao) // Escolhe a ação de acordo com a opção
+                {
+                    case "1": // Se a opção for 1
+                        confirmar = true; // Atribui verdadeiro para a variável confirmar
+                        Locador locador = new Locador(id, nome, telefone); // Cria um objeto locador com os dados digitados
+                        locadores.Add(locador); // Adiciona o locador na lista de locadores
+                        Console.WriteLine("Sua informação foi salva, pressione qualquer tecla para voltar ao menu principal."); // Escreve uma mensagem de sucesso
+                        Console.ReadKey(); // Espera o usuário pressionar uma tecla
+                        break; // Sai do switch
+                    case "2": // Se a opção for 2
+                        confirmar = true; // Atribui verdadeiro para a variável confirmar
+                        break; // Sai do switch
+                    case "3": // Se a opção for 3
+                        confirmar = true; // Atribui verdadeiro para a variável confirmar
+                        MenuPrincipal(); // Chama o método que exibe o menu principal
+                        break; // Sai do switch
+                    default: // Se a opção for qualquer outra coisa
+                        Console.WriteLine("Opção inválida. Pressione qualquer tecla para continuar."); // Escreve uma mensagem de erro
+                        Console.ReadKey(); // Espera o usuário pressionar uma tecla
+                        break; // Sai do switch
+                }
+            }
+        }
+
+        // Método que cadastra um locatário no sistema
+        private void CadastrarLocatario()
+        {
+            Console.Clear(); // Limpa a tela
+            Console.WriteLine("Cadastro de Locatário"); // Escreve o título do cadastro
+            int id = locatarios.Count + 1; // Gera um ID único para o locatário
+            Console.WriteLine($"ID do Locatário: {id}"); // Escreve o ID do locatário
+            Console.Write("Nome do Locatário: "); // Escreve a instrução para digitar o nome do locatário
+            string nome = Console.ReadLine(); // Lê o nome do locatário
+            Console.Write("Telefone do Locatário: "); // Escreve a instrução para digitar o telefone do locatário
+            string telefone = Console.ReadLine(); // Lê o telefone do locatário
+            bool confirmar = false; // Variável que controla a confirmação do cadastro
+            while (!confirmar) // Enquanto não confirmar
+            {
+                Console.WriteLine("Você deseja salvar as informações do Cadastro do Locatário?"); // Escreve a pergunta para confirmar o cadastro
+                Console.WriteLine("1 – Para Sim"); // Escreve a opção 1
+                Console.WriteLine("2 – Para Não"); // Escreve a opção 2
+                Console.WriteLine("3 – Voltar para o Menu Principal"); // Escreve a opção 3
+                Console.Write("Digite a opção desejada: "); // Escreve a instrução para digitar a opção
+                string opcao = Console.ReadLine(); // Lê a opção digitada
+                switch (opcao) // Escolhe a ação de acordo com a opção
+                {
+                    case "1": // Se a opção for 1
+                        confirmar = true; // Atribui verdadeiro para a variável confirmar
+                        Locatario locatario = new Locatario(id, nome, telefone); // Cria um objeto locatário com os dados digitados
+                        locatarios.Add(locatario); // Adiciona o locatário na lista de locatários
+                        Console.WriteLine("Sua informação foi salva, pressione qualquer tecla para voltar ao menu principal."); // Escreve uma mensagem de sucesso
+                        Console.ReadKey(); // Espera o usuário pressionar uma tecla
+                        break; // Sai do switch
+                    case "2": // Se a opção for 2
+                        confirmar = true; // Atribui verdadeiro para a variável confirmar
+                        break; // Sai do switch
+                    case "3": // Se a opção for 3
+                        confirmar = true; // Atribui verdadeiro para a variável confirmar
+                        MenuPrincipal(); // Chama o método que exibe o menu principal
+                        break; // Sai do switch
+                    default: // Se a opção for qualquer outra coisa
+                        Console.WriteLine("Opção inválida. Pressione qualquer tecla para continuar."); // Escreve uma mensagem de erro
+                        Console.ReadKey(); // Espera o usuário pressionar uma tecla
+                        break; // Sai do
+                        break; // Sai do switch
+                }
+            }
+        }
+
+        // Método que cadastra um imóvel no sistema
+        private void CadastrarImovel()
+        {
+            Console.Clear(); // Limpa a tela
+            Console.WriteLine("Cadastro de Imóvel"); // Escreve o título do cadastro
+            int id = imoveis.Count + 1; // Gera um ID único para o imóvel
+            Console.WriteLine($"ID do Imóvel: {id}"); // Escreve o ID do imóvel
+            Console.WriteLine("Informe o tipo do Imóvel: "); // Escreve a instrução para informar o tipo do imóvel
+            Console.WriteLine("1 – Casa"); // Escreve a opção 1
+            Console.WriteLine("2 – Apartamento"); // Escreve a opção 2
+            Console.WriteLine("3 – Studio"); // Escreve a opção 3
+            Console.WriteLine("4 – Sala Comercial"); // Escreve a opção 4
+            Console.Write("Digite a opção desejada: "); // Escreve a instrução para digitar a opção
+            string tipo = Console.ReadLine(); // Lê a opção digitada
+            switch (tipo) // Escolhe o tipo de acordo com a opção
+            {
+                case "1": // Se a opção for 1
+                    tipo = "Casa"; // Atribui o valor "Casa" para o tipo
+                    break; // Sai do switch
+                case "2": // Se a opção for 2
+                    tipo = "Apartamento"; // Atribui o valor "Apartamento" para o tipo
+                    break; // Sai do switch
+                case "3": // Se a opção for 3
+                    tipo = "Studio"; // Atribui o valor "Studio" para o tipo
+                    break; // Sai do switch
+                case "4": // Se a opção for 4
+                    tipo = "Sala Comercial"; // Atribui o valor "Sala Comercial" para o tipo
+                    break; // Sai do switch
+                default: // Se a opção for qualquer outra coisa
+                    tipo = "Não informado"; // Atribui o valor "Não informado" para o tipo
+                    break; // Sai do switch
+            }
+            Console.Write("Informe a ID do Locador: "); // Escreve a instrução para informar a ID do locador
+            int idLocador = int.Parse(Console.ReadLine()); // Lê e converte a ID do locador para inteiro
+            Console.Write("Valor mensal do aluguel: "); // Escreve a instrução para informar o valor do aluguel
+            decimal valor = decimal.Parse(Console.ReadLine()); // Lê e converte o valor do aluguel para decimal
+            bool confirmar = false; // Variável que controla a confirmação do cadastro
+            while (!confirmar) // Enquanto não confirmar
+            {
+                Console.WriteLine("Você deseja salvar as informações do Cadastro do Imóvel?"); // Escreve a pergunta para confirmar o cadastro
+                Console.WriteLine("1 – Para Sim"); // Escreve a opção 1
+                Console.WriteLine("2 – Para Não"); // Escreve a opção 2
+                Console.WriteLine("3 – Voltar para o Menu Principal"); // Escreve a opção 3
+                Console.Write("Digite a opção desejada: "); // Escreve a instrução para digitar a opção
+                string opcao = Console.ReadLine(); // Lê a opção digitada
+                switch (opcao) // Escolhe a ação de acordo com a opção
+                {
+                    case "1": // Se a opção for 1
+                        confirmar = true; // Atribui verdadeiro para a variável confirmar
+                        Imovel imovel = new Imovel(id, tipo, idLocador, valor); // Cria um objeto imóvel com os dados digitados
+                        imoveis.Add(imovel); // Adiciona o imóvel na lista de imóveis
+                        Console.WriteLine("Sua informação foi salva, pressione qualquer tecla para voltar ao menu principal."); // Escreve uma mensagem de sucesso
+                        Console.ReadKey(); // Espera o usuário pressionar uma tecla
+                        break; // Sai do switch
+                    case "2": // Se a opção for 2
+                        confirmar = true; // Atribui verdadeiro para a variável confirmar
+                        break; // Sai do switch
+                    case "3": // Se a opção for 3
+                        confirmar = true; // Atribui verdadeiro para a variável confirmar
+                        MenuPrincipal(); // Chama o método que exibe o menu principal
+                        break; // Sai do switch
+                    default: // Se a opção for qualquer outra coisa
+                        Console.WriteLine("Opção inválida. Pressione qualquer tecla para continuar."); // Escreve uma mensagem de erro
+                        Console.ReadKey(); // Espera o usuário pressionar uma tecla
+                        break; // Sai do switch
+                }
+            }
+        }
+
+        // Método que exibe o menu de alugar imóvel do sistema
+        private void MenuAlugarImovel()
+        {
+            bool voltar = false; // Variável que controla a saída do loop
+            while (!voltar) // Enquanto não voltar
+            {
+                Console.Clear(); // Limpa a tela
+                Console.WriteLine("Alugar Imóvel"); // Escreve o título do menu
+                Console.WriteLine("Informe o tipo do imóvel que deseja locar: "); // Escreve a instrução para informar o tipo do imóvel
+                Console.WriteLine("1 – Casa"); // Escreve a opção 1
+                Console.WriteLine("2 – Apartamento"); // Escreve a opção 2
+                Console.WriteLine("3 – Studio"); // Escreve a opção 3
+                Console.WriteLine("4 – Sala Comercial"); // Escreve a opção 4
+                Console.WriteLine("5 – Voltar para o menu principal"); // Escreve a opção 5
+                Console.Write("Digite a opção desejada: "); // Escreve a instrução para digitar a opção
+                string tipo = Console.ReadLine(); // Lê a opção digitada
+                switch (tipo) // Escolhe a ação de acordo com a opção
+                {
+                    case "1": // Se a opção for 1
+                        tipo = "Casa"; // Atribui o valor "Casa" para o tipo
+                        ListarImoveis(tipo); // Chama o método que lista os imóveis do tipo informado
+                        break; // Sai do switch
+                    case "2": // Se a opção for 2
+                        tipo = "Apartamento"; // Atribui o valor "Apartamento" para o tipo
+                        ListarImoveis(tipo); // Chama o método que lista os imóveis do tipo informado
+                        break; // Sai do switch
+                    case "3": // Se a opção for 3
+                        tipo = "Studio"; // Atribui o valor "Studio" para o tipo
+                        ListarImoveis(tipo); // Chama o método que lista os imóveis do tipo informado
+                        break; // Sai do switch
+                    case "4": // Se a opção for 4
+                        tipo = "Sala Comercial"; // Atribui o valor "Sala Comercial" para o tipo
+                        ListarImoveis(tipo); // Chama o método que lista os imóveis do tipo informado
+                        break; // Sai do switch
+                    case "5": // Se a opção for 5
+                        voltar = true; // Atribui verdadeiro para a variável voltar
+                        break; // Sai do switch
+                    default: // Se a opção for qualquer outra coisa
+                        Console.WriteLine("Opção inválida. Pressione qualquer tecla para continuar."); // Escreve uma mensagem de erro
+                        Console.ReadKey(); // Espera o usuário pressionar uma tecla
+                        break; // Sai do switch
+                }
+            }
+        }
+
+        // Método que lista os imóveis de um tipo informado
+        private void ListarImoveis(string tipo)
+        {
+            Console.Clear(); // Limpa a tela
+            Console.WriteLine($"Lista de Imóveis do tipo {tipo}"); // Escreve o título da lista
+            // Filtra os imóveis do tipo informado e que não estão alugados
+            List<Imovel> imoveisDisponiveis = imoveis.Where(i => i.Tipo == tipo && !contratos.Any(c => c.IdImovel == i.Id)).ToList();
+            if (imoveisDisponiveis.Count > 0) // Se houver imóveis disponíveis
+            {
+                // Escreve o cabeçalho da tabela com os dados dos imóveis
+                Console.WriteLine("{0,-10}{1,-30}{2,-20}", "ID", "Tipo", "Valor");
+                foreach (Imovel imovel in imoveisDisponiveis) // Percorre cada im
+                        foreach (Imovel imovel in imoveisDisponiveis) // Percorre cada imóvel na lista de imóveis disponíveis
+                        {
+                            // Escreve os dados do imóvel na tabela
+                            Console.WriteLine("{0,-10}{1,-30}{2,-20}", imovel.Id, imovel.Tipo, imovel.Valor.ToString("C"));
+                        }
+                        Console.Write("Informe a ID do imóvel que deseja alugar: "); // Escreve a instrução para informar a ID do imóvel
+                        int idImovel = int.Parse(Console.ReadLine()); // Lê e converte a ID do imóvel para inteiro
+                        if (imoveisDisponiveis.Any(i => i.Id == idImovel)) // Se o imóvel informado existe e está disponível
+                        {
+                            Console.Write("Informe a sua ID de locatário: "); // Escreve a instrução para informar a ID do locatário
+                            int idLocatario = int.Parse(Console.ReadLine()); // Lê e converte a ID do locatário para inteiro
+                            if (locatarios.Any(l => l.Id == idLocatario)) // Se o locatário informado existe
+                            {
+                                bool confirmar = false; // Variável que controla a confirmação do contrato
+                                while (!confirmar) // Enquanto não confirmar
+                                {
+                                    Console.WriteLine("Você deseja salvar as informações do Cadastro do Contrato?"); // Escreve a pergunta para confirmar o contrato
+                                    Console.WriteLine("1 – Para Sim"); // Escreve a opção 1
+                                    Console.WriteLine("2 – Para Não"); // Escreve a opção 2
+                                    Console.WriteLine("3 – Voltar para o Menu Principal"); // Escreve a opção 3
+                                    Console.Write("Digite a opção desejada: "); // Escreve a instrução para digitar a opção
+                                    string opcao = Console.ReadLine(); // Lê a opção digitada
+                                    switch (opcao) // Escolhe a ação de acordo com a opção
+                                    {
+                                        case "1": // Se a opção for 1
+                                            confirmar = true; // Atribui verdadeiro para a variável confirmar
+                                            int idContrato = contratos.Count + 1; // Gera um ID único para o contrato
+                                            // Obtém o valor do aluguel do imóvel do contrato
+                                            decimal valor = imoveis.Find(i => i.Id == idImovel).Valor;
+                                            Contrato contrato = new Contrato(idContrato, idImovel, idLocatario, valor); // Cria um objeto contrato com os dados informados
+                                            contratos.Add(contrato); // Adiciona o contrato na lista de contratos
+                                            Console.WriteLine("Sua informação foi salva, pressione qualquer tecla para continuar."); // Escreve uma mensagem de sucesso
+                                            Console.ReadKey(); // Espera o usuário pressionar uma tecla
+                                            ExibirContrato(contrato); // Chama o método que exibe o contrato
+                                            break; // Sai do switch
+                                        case "2": // Se a opção for 2
+                                            confirmar = true; // Atribui verdadeiro para a variável confirmar
+                                            break; // Sai do switch
+                                        case "3": // Se a opção for 3
+                                            confirmar = true; // Atribui verdadeiro para a variável confirmar
+                                            MenuPrincipal(); // Chama o método que exibe o menu principal
+                                            break; // Sai do switch
+                                        default: // Se a opção for qualquer outra coisa
+                                            Console.WriteLine("Opção inválida. Pressione qualquer tecla para continuar."); // Escreve uma mensagem de erro
+                                            Console.ReadKey(); // Espera o usuário pressionar uma tecla
+                                            break; // Sai do switch
+                                    }
+                                }
+                            }
+                            else // Se o locatário informado não existe
+                            {
+                                Console.WriteLine("A ID do locatário não existe. Pressione qualquer tecla para voltar."); // Escreve uma mensagem de erro
+                                Console.ReadKey(); // Espera o usuário pressionar uma tecla
+                            }
+                        }
+                        else // Se o imóvel informado não existe ou não está disponível
+                        {
+                            Console.WriteLine("A ID do imóvel não existe ou não está disponível. Pressione qualquer tecla para voltar."); // Escreve uma mensagem de erro
+                            Console.ReadKey(); // Espera o usuário pressionar uma tecla
+                        }
+                    }
+                    else // Se não houver imóveis disponíveis
+                    {
+                        Console.WriteLine("Não há imóveis disponíveis do tipo informado. Pressione qualquer tecla para voltar."); // Escreve uma mensagem de aviso
+                        Console.ReadKey(); // Espera o usuário pressionar uma tecla
+                    }
+                }
+
+                // Método que exibe o contrato e as parcelas do sistema
+                private void ExibirContrato(Contrato contrato)
+                {
+                    Console.Clear(); // Limpa a tela
+                    Console.WriteLine("Contrato"); // Escreve o título do contrato
+                    Console.WriteLine($"ID do contrato: {contrato.Id}"); // Escreve o ID do contrato
+                    Console.WriteLine($"ID do Imóvel: {contrato.IdImovel}"); // Escreve o ID do imóvel do contrato
+                    // Obtém o tipo do imóvel do contrato
+                    string tipo = imoveis.Find(i => i.Id == contrato.IdImovel).Tipo;
+                    Console.WriteLine($"Tipo do imóvel locado: {tipo}"); // Escreve o tipo do imóvel do contrato
+                    Console.WriteLine($"ID do locatário: {contrato.IdLocatario}"); // Escreve o ID do locatário do contrato
+                    // Obtém o nome do locatário do contrato
+                    string nome = locatarios.Find(l => l.Id == contrato.IdLocatario).Nome;
+                    Console.WriteLine($"Nome do locatário: {nome}"); // Escreve o nome do locatário do contrato
+                    // Escreve o cabeçalho da tabela com os dados das parcelas
+                    Console.WriteLine("{0,-10}{1,-20}{2,-20}{3,-20}{4,-20}", "PARCELA", "VALOR", "STATUS", "IMOBILIÁRIA", "LOCADOR");
+                    foreach (Parcela parcela in contrato.Parcelas) // Percorre cada parcela na lista de parcelas do contrato
+                    {
+                        // Escreve os dados da parcela na tabela
+                        Console.WriteLine("{0,-10}{1,-20}{2,-20}{3,-20}{4,-20}", parcela.Codigo, parcela.Valor.ToString("C"), parcela.Status, parcela.Imobiliaria, parcela.Locador);
+                    }
+                    Console.WriteLine("O que você deseja fazer?"); // Escreve a pergunta para escolher uma ação
+                    Console.WriteLine("1 – Pagar Parcela"); // Escreve a opção 1
+                    Console.WriteLine("2 – Cancelar Contrato"); // Escreve a opção 2
+                    Console.WriteLine("3 – Voltar para o menu Principal"); // Escreve a opção 3
+                    Console.Write("Digite a opção desejada: "); // Escreve a instrução para digitar a opção
+                    string opcao = Console.ReadLine(); // Lê a opção digitada
+                    switch (opcao) // Escolhe a ação de acordo com a opção
+                    {
+                        case "1": // Se a opção for 1
+                            PagarParcela(contrato); // Chama o método que paga uma parcela do contrato
+                            break; // Sai do switch
+                        case "2": // Se a opção for 2
+                            CancelarContrato(contrato); // Chama o método que cancela o contrato
+                            break; // Sai do switch
+                        case "3": // Se a opção for 3
+                            MenuPrincipal(); // Chama o método que exibe o menu principal
+                            break; // Sai do switch
+                        default: // Se a opção for qualquer outra coisa
+                            Console.WriteLine("Opção inválida. Pressione qualquer tecla para continuar."); // Escreve uma mensagem de erro
+                            Console.ReadKey(); // Espera o usuário pressionar uma tecla
+                            break; // Sai do switch
+                    }
+                }
+
+                // Método que paga uma parcela do contrato
+                private void PagarParcela(Contrato contrato)
+                {
+                    Console.Clear(); // Limpa a tela
+                    Console.WriteLine("Pagar Parcela"); // Escreve o título da ação
+                    Console.Write("Informe o código da parcela a ser paga: "); // Escreve a instrução para informar o código da parcela
+                    string codigo = Console.ReadLine(); // Lê o código da parcela
+                    // Obtém a parcela do contrato com o código informado
+                    Parcela parcela = contrato.Parcelas.Find(p => p.Codigo == codigo);
+                    if (parcela != null) // Se a parcela existe
+                    {
+                        if (parcela.Status == "Em aberto") // Se a parcela está em aberto
+                        if (parcela.Status == "Em aberto") // Se a parcela está em aberto
+                        {
+                            bool confirmar = false; // Variável que controla a confirmação do pagamento
+                            while (!confirmar) // Enquanto não confirmar
+                            {
+                                Console.WriteLine("Você deseja pagar a parcela?"); // Escreve a pergunta para confirmar o pagamento
+                                Console.WriteLine("1 – Para Sim"); // Escreve a opção 1
+                                Console.WriteLine("2 – Para Não"); // Escreve a opção 2
+                                Console.WriteLine("3 – Voltar para o contrato"); // Escreve a opção 3
+                                Console.Write("Digite a opção desejada: "); // Escreve a instrução para digitar a opção
+                                string opcao = Console.ReadLine(); // Lê a opção digitada
+                                switch (opcao) // Escolhe a ação de acordo com a opção
+                                {
+                                    case "1": // Se a opção for 1
+                                        confirmar = true; // Atribui verdadeiro para a variável confirmar
+                                        parcela.Status = "Paga"; // Altera o status da parcela para "Paga"
+                                        parcela.Imobiliaria = "Recebido"; // Altera o status da imobiliária para "Recebido"
+                                        parcela.Locador = "A Pagar"; // Altera o status do locador para "A Pagar"
+                                        Console.WriteLine("A parcela foi paga, pressione qualquer tecla para continuar."); // Escreve uma mensagem de sucesso
+                                        Console.ReadKey(); // Espera o usuário pressionar uma tecla
+                                        ExibirContrato(contrato); // Chama o método que exibe o contrato
+                                        break; // Sai do switch
+                                    case "2": // Se a opção for 2
+                                        confirmar = true; // Atribui verdadeiro para a variável confirmar
+                                        break; // Sai do switch
+                                    case "3": // Se a opção for 3
+                                        confirmar = true; // Atribui verdadeiro para a variável confirmar
+                                        ExibirContrato(contrato); // Chama o método que exibe o contrato
+                                        break; // Sai do switch
+                                    default: // Se a opção for qualquer outra coisa
+                                        Console.WriteLine("Opção inválida. Pressione qualquer tecla para continuar."); // Escreve uma mensagem de erro
+                                        Console.ReadKey(); // Espera o usuário pressionar uma tecla
+                                        break; // Sai do switch
+                                }
+                            }
+                        }
+                        else // Se a parcela não está em aberto
+                        {
+                            Console.WriteLine("A parcela já foi paga. Pressione qualquer tecla para voltar."); // Escreve uma mensagem de aviso
+                            Console.ReadKey(); // Espera o usuário pressionar uma tecla
+                            ExibirContrato(contrato); // Chama o método que exibe o contrato
+                        }
+                    }
+                    else // Se a parcela não existe
+                    {
+                        Console.WriteLine("O código da parcela não existe. Pressione qualquer tecla para voltar."); // Escreve uma mensagem de erro
+                        Console.ReadKey(); // Espera o usuário pressionar uma tecla
+                        ExibirContrato(contrato); // Chama o método que exibe o contrato
+                    }
+                }
+
+                // Método que cancela o contrato e as parcelas do sistema
+                private void CancelarContrato(Contrato contrato)
+                {
+                    Console.Clear(); // Limpa a tela
+                    Console.WriteLine("Cancelar Contrato"); // Escreve o título da ação
+                    bool confirmar = false; // Variável que controla a confirmação do cancelamento
+                    while (!confirmar) // Enquanto não confirmar
+                    {
+                        Console.WriteLine("Você deseja cancelar o contrato?"); // Escreve a pergunta para confirmar o cancelamento
+                        Console.WriteLine("1 – Para Sim"); // Escreve a opção 1
+                        Console.WriteLine("2 – Para Não"); // Escreve a opção 2
+                        Console.WriteLine("3 – Voltar para o contrato"); // Escreve a opção 3
+                        Console.Write("Digite a opção desejada: "); // Escreve a instrução para digitar a opção
+                        string opcao = Console.ReadLine(); // Lê a opção digitada
+                        switch (opcao) // Escolhe a ação de acordo com a opção
+                        {
+                            case "1": // Se a opção for 1
+                                confirmar = true; // Atribui verdadeiro para a variável confirmar
+                                contratos.Remove(contrato); // Remove o contrato da lista de contratos
+                                Console.WriteLine("O contrato foi cancelado, pressione qualquer tecla para voltar ao menu principal."); // Escreve uma mensagem de sucesso
+                                Console.ReadKey(); // Espera o usuário pressionar uma tecla
+                                MenuPrincipal(); // Chama o método que exibe o menu principal
+                                break; // Sai do switch
+                            case "2": // Se a opção for 2
+                                confirmar = true; // Atribui verdadeiro para a variável confirmar
+                                break; // Sai do switch
+                            case "3": // Se a opção for 3
+                                confirmar = true; // Atribui verdadeiro para a variável confirmar
+                                ExibirContrato(contrato); // Chama o método que exibe o contrato
+                                break; // Sai do switch
+                            default: // Se a opção for qualquer outra coisa
+                                Console.WriteLine("Opção inválida. Pressione qualquer tecla para continuar."); // Escreve uma mensagem de erro
+                                Console.ReadKey(); // Espera o usuário pressionar uma tecla
+                                break; // Sai do switch
+                        }
+                    }
+                }
+
+                // Método que exibe o menu de consultar contratos do sistema
+                private void MenuConsultarContratos()
+                {
+                    bool voltar = false; // Variável que controla a saída do loop
+                    while (!voltar) // Enquanto não voltar
+                    {
+                        Console.Clear(); // Limpa a tela
+                        Console.WriteLine("Consultar Contratos"); // Escreve o título do menu
+                        Console.WriteLine("1 – Consultar por ID do contrato"); // Escreve a opção 1
+                        Console.WriteLine("2 – Consultar por ID do imóvel"); // Escreve a opção 2
+                        Console.WriteLine("3 – Consultar por ID do locatário"); // Escreve a opção 3
+                        Console.WriteLine("4 – Voltar para o menu principal"); // Escreve a opção 4
+                        Console.Write("Digite a opção desejada: "); // Escreve a instrução para digitar a opção
+                        string opcao = Console.ReadLine(); // Lê a opção digitada
+                        switch (opcao) // Escolhe a ação de acordo com a opção
+                        {
+                            case "1": // Se a opção for 1
+                                ConsultarPorIdContrato(); // Chama o método que consulta o contrato por ID do contrato
+                                break; // Sai do switch
+                            case "2": // Se a opção for 2
+                                ConsultarPorIdImovel(); // Chama o método que consulta o contrato por ID do imóvel
+                                break; // Sai do switch
+                            case "3": // Se a opção for 3
+                                ConsultarPorIdLocatario(); // Chama o método que consulta o contrato por ID do locatário
+                                break; // Sai do switch
+                            case "4": // Se a opção for 4
+                                voltar = true; // Atribui verdadeiro para a variável voltar
+                                break; // Sai do switch
+                            default: // Se a opção for qualquer outra coisa
+                                Console.WriteLine("Opção inválida. Pressione qualquer tecla para continuar."); // Escreve uma mensagem de erro
+                                Console.ReadKey(); // Espera o usuário pressionar uma tecla
+                                break; // Sai do switch
+                        }
+                    }
+                }
+
+                // Método que consulta o contrato por ID do contrato
+                private void ConsultarPorIdContrato()
+                {
+                    Console.Clear(); // Limpa a tela
+                    Console.WriteLine("Consultar por ID do contrato"); // Escreve o título da consulta
+                    Console.Write("Informe a ID do contrato a ser pesquisado: "); // Escreve a instrução para informar a ID do contrato
+                    int idContrato = int.Parse(Console.ReadLine()); // Lê e converte a ID do contrato para inteiro
+                    // Obtém o contrato com a ID informada
+                    Contrato contrato = contratos.Find(c => c.Id == idContrato);
+                    if (contrato != null) // Se o contrato existe
+                    {
+                        ExibirContrato(contrato); // Chama o método que exibe o contrato
+                    }
+                    else // Se o contrato não existe
+                    {
+                        Console.WriteLine("A ID do contrato não existe. Pressione qualquer tecla para voltar."); // Escreve uma mensagem de erro
+                        Console.ReadKey(); // Espera o usuário pressionar uma tecla
+                    }
+                }
+
+                // Método
+                // Método que consulta o contrato por ID do imóvel
+                private void ConsultarPorIdImovel()
+                {
+                    Console.Clear(); // Limpa a tela
+                    Console.WriteLine("Consultar por ID do imóvel"); // Escreve o título da consulta
+                    Console.Write("Informe a ID do imóvel a ser pesquisado: "); // Escreve a instrução para informar a ID do imóvel
+                    int idImovel = int.Parse(Console.ReadLine()); // Lê e converte a ID do imóvel para inteiro
+                    // Obtém o contrato com a ID do imóvel informada
+                    Contrato contrato = contratos.Find(c => c.IdImovel == idImovel);
+                    if (contrato != null) // Se o contrato existe
+                    {
+                        ExibirContrato(contrato); // Chama o método que exibe o contrato
+                    }
+                    else // Se o contrato não existe
+                    {
+                        Console.WriteLine("A ID do imóvel não existe ou não está alugado. Pressione qualquer tecla para voltar."); // Escreve uma mensagem de erro
+                        Console.ReadKey(); // Espera o usuário pressionar uma tecla
+                    }
+                }
+
+                // Método que consulta o contrato por ID do locatário
+                private void ConsultarPorIdLocatario()
+                {
+                    Console.Clear(); // Limpa a tela
+                    Console.WriteLine("Consultar por ID do locatário"); // Escreve o título da consulta
+                    Console.Write("Informe a ID do locatário a ser pesquisado: "); // Escreve a instrução para informar a ID do locatário
+                    int idLocatario = int.Parse(Console.ReadLine()); // Lê e converte a ID do locatário para inteiro
+                    // Obtém o contrato com a ID do locatário informada
+                    Contrato contrato = contratos.Find(c => c.IdLocatario == idLocatario);
+                    if (contrato != null) // Se o contrato existe
+                    {
+                        ExibirContrato(contrato); // Chama o método que exibe o contrato
+                    }
+                    else // Se o contrato não existe
+                    {
+                        Console.WriteLine("A ID do locatário não existe ou não possui contrato. Pressione qualquer tecla para voltar."); // Escreve uma mensagem de erro
+                        Console.ReadKey(); // Espera o usuário pressionar uma tecla
+                    }
+                }
+            }
+        }
+    }
+                // Método que consulta o contrato por ID do locatário
+                private void ConsultarPorIdLocatario()
+                {
+                    Console.Clear(); // Limpa a tela
+                    Console.WriteLine("Consultar por ID do locatário"); // Escreve o título da consulta
+                    Console.Write("Informe a ID do locatário a ser pesquisado: "); // Escreve a instrução para informar a ID do locatário
+                    int idLocatario = int.Parse(Console.ReadLine()); // Lê e converte a ID do locatário para inteiro
+                    // Obtém o contrato com a ID do locatário informada
+                    Contrato contrato = contratos.Find(c => c.IdLocatario == idLocatario);
+                    if (contrato != null) // Se o contrato existe
+                    {
+                        ExibirContrato(contrato); // Chama o método que exibe o contrato
+                    }
+                    else // Se o contrato não existe
+                    {
+                        Console.WriteLine("A ID do locatário não existe ou não possui contrato. Pressione qualquer tecla para voltar."); // Escreve uma mensagem de erro
+                        Console.ReadKey(); // Espera o usuário pressionar uma tecla
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Classe que representa um locador
+class Locador
+{
+    // Atributos da classe
+    private int id; // ID do locador
+    private string nome; // Nome do locador
+    private string telefone; // Telefone do locador
+
+    // Construtor da classe
+    public Locador(int id, string nome, string telefone)
+    {
+        this.id = id; // Atribui o valor do parâmetro para o atributo
+        this.nome = nome; // Atribui o valor do parâmetro para o atributo
+        this.telefone = telefone; // Atribui o valor do parâmetro para o atributo
+    }
+
+    // Propriedade que permite acessar o ID do locador
+    public int Id
+    {
+        get { return id; } // Retorna o valor do atributo
+    }
+
+    // Propriedade que permite acessar o nome do locador
+    public string Nome
+    {
+        get { return nome; } // Retorna o valor do atributo
+    }
+
+    // Propriedade que permite acessar o telefone do locador
+    public string Telefone
+    {
+        get { return telefone; } // Retorna o valor do atributo
+    }
+
+    // Método que retorna uma representação textual do locador
+    public override string ToString()
+    {
+        return $"{id};{nome};{telefone}"; // Retorna uma string com os dados do locador separados por ';'
+    }
+}
+
+// Classe que representa um locatário
+class Locatario
+{
+    // Atributos da classe
+    private int id; // ID do locatário
+    private string nome; // Nome do locatário
+    private string telefone; // Telefone do locatário
+
+    // Construtor da classe
+    public Locatario(int id, string nome, string telefone)
+    {
+        this.id = id; // Atribui o valor do parâmetro para o atributo
+        this.nome = nome; // Atribui o valor do parâmetro para o atributo
+        this.telefone = telefone; // Atribui o valor do parâmetro para o atributo
+    }
+
+    // Propriedade que permite acessar o ID do locatário
+    public int Id
+    {
+        get { return id; } // Retorna o valor do atributo
+    }
+
+    // Propriedade que permite acessar o nome do locatário
+    public string Nome
+    {
+        get { return nome; } // Retorna o valor do atributo
+    }
+
+    // Propriedade que permite acessar o telefone do locatário
+    public string Telefone
+    {
+        get { return telefone; } // Retorna o valor do atributo
+    }
+
+    // Método que retorna uma representação textual do locatário
+    public override string ToString()
+    {
+        return $"{id};{nome};{telefone}"; // Retorna uma string com os dados do locatário separados por ';'
+    }
+}
+
+// Classe que representa um imóvel
+class Imovel
+{
+    // Atributos da classe
+    private int id; // ID do imóvel
+    private string tipo; // Tipo do imóvel
+    private int idLocador; // ID do locador do imóvel
+    private decimal valor; // Valor do aluguel do imóvel
+
+    // Construtor da classe
+    public Imovel(int id, string tipo, int idLocador, decimal valor)
+    {
+        this.id = id; // Atribui o valor do parâmetro para o atributo
+        this.tipo = tipo; // Atribui o valor do parâmetro para o atributo
+        this.idLocador = idLocador; // Atribui o valor do parâmetro para o atributo
+        this.valor = valor; // Atribui o valor do parâmetro para o atributo
+    }
+
+    // Propriedade que permite acessar o ID do imóvel
+    public int Id
+    {
+        get { return id; } // Retorna o valor do atributo
+    }
+
+    // Propriedade que permite acessar o tipo do imóvel
+    public string Tipo
+    {
+        get { return tipo; } // Retorna o valor do atributo
+    }
+
+    // Propriedade que permite acessar o ID do locador do imóvel
+    public int IdLocador
+    {
+        get { return idLocador; } // Retorna o valor do atributo
+    }
+
+    // Propriedade que permite acessar o valor do aluguel do imóvel
+    public decimal Valor
+    {
+        get { return valor; } // Retorna o valor do atributo
+    }
+
+    // Método que retorna uma representação textual do imóvel
+    public override string ToString()
+    {
+        return $"{id};{tipo};{idLocador};{valor}"; // Retorna uma string com os dados do imóvel separados por ';'
+    }
+}
+
+// Classe que representa um contrato
+class Contrato
+{
+    // Atributos da classe
+    private int id; // ID do contrato
+    private int idImovel; // ID do imóvel do contrato
+    private int idLocatario; // ID do locatário do contrato
+    private decimal valor; // Valor do aluguel do contrato
+    private List<Parcela> parcelas; // Lista de parcelas do contrato
+
+    // Construtor da classe
+    public Contrato(int id, int idImovel, int idLocatario, decimal valor)
+    {
+        this.id = id; // Atribui o valor do parâmetro para o atributo
+        this.idImovel = idImovel; // Atribui o valor do parâmetro para o atributo
+        this.idLocatario = idLocatario; // Atribui o valor do parâmetro para o atributo
+        this.valor = valor; // Atribui o valor do parâmetro para o atributo
+        this.parcelas = new List<Parcela>(); // Cria uma lista vazia de parcelas
+        GerarParcelas(); // Chama o método que gera as parcelas do contrato
+    }
+
+    // Propriedade que permite acessar o ID do contrato
+    public int Id
+    {
+        get { return id; } // Retorna o valor do atributo
+    }
+
+    // Propriedade que permite acessar o ID do imóvel do contrato
+    public int IdImovel
+    {
+        get { return idImovel; } // Retorna o valor do atributo
+    }
+
+    // Propriedade que permite acessar o ID do locatário do contrato
+    public int IdLocatario
+    {
+        get { return idLocatario; } // Retorna o valor do atributo
+    }
+
+    // Propriedade que permite acessar o valor do aluguel do contrato
+    public decimal Valor
+    {
+        get { return valor; } // Retorna o valor do atributo
+    }
+
+                // Método principal do programa
+                static void Main(string[] args)
+                {
+                    SistemaImobiliaria sistema = new SistemaImobiliaria(); // Cria um objeto do sistema imobiliário
+                    sistema.CarregarDados(); // Chama o método que carrega os dados dos arquivos de texto
+                    sistema.MenuPrincipal(); // Chama o método que exibe o menu principal do sistema
+                }
+            }
+        }
